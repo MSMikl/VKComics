@@ -143,3 +143,4 @@ if __name__ == '__main__':
         group_id=group_id,
         version=version
     )
+    os.remove(picture)
