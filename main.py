@@ -8,11 +8,6 @@ import requests
 from environs import Env
 
 
-ENV = Env()
-ENV.read_env()
-ACCESS_TOKEN = ENV('ACCESS_TOKEN')
-
-
 def download_picture(url, path='./'):
     comics_picture = requests.get(url)
     comics_picture.raise_for_status()
@@ -36,12 +31,16 @@ def get_xkcd_picture():
     ]
 
 
-def post_picture(picture, text=''):
-    group_id = ENV('GROUP_ID')
-    user_id = ENV('USER_ID')
+def post_picture(
+        picture,
+        group_id,
+        user_id,
+        access_token,
+        text=''
+    ):
     params_for_get_server = {
         'group_id': group_id,
-        'access_token': ACCESS_TOKEN,
+        'access_token': access_token,
         'v': '5.131'
     }
     response_1stage = requests.get(
@@ -64,7 +63,7 @@ def post_picture(picture, text=''):
         return 'Ошибка загрузки на сервер'
     response_2stage.update(
         group_id=group_id,
-        access_token=ACCESS_TOKEN,
+        access_token=access_token,
         v='5.131'
     )
     response_3stage = requests.post(
@@ -83,7 +82,7 @@ def post_picture(picture, text=''):
         'friends_only': '1',
         'message': text,
         'attachments': attachments,
-        'access_token': ACCESS_TOKEN,
+        'access_token': access_token,
         'v': '5.131'
     }
     response_4stage = requests.get(
@@ -95,5 +94,16 @@ def post_picture(picture, text=''):
 
 
 if __name__ == '__main__':
+    env = Env()
+    env.read_env()
+    access_token = env('access_token')
+    group_id = env('GROUP_ID')
+    user_id = env('USER_ID')
     picture, text = get_xkcd_picture()
-    print(post_picture(picture, text))
+    print(post_picture(
+        picture=picture,
+        group_id=group_id,
+        user_id=user_id,
+        access_token=access_token,
+        text=text
+    ))
