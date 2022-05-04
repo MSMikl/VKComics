@@ -38,12 +38,13 @@ def post_picture(
         group_id,
         user_id,
         access_token,
+        version,
         text=''
     ):
     params_for_get_server = {
         'group_id': group_id,
         'access_token': access_token,
-        'v': '5.131'
+        'v': version
     }
     response_1stage = requests.get(
         'https://api.vk.com/method/photos.getWallUploadServer',
@@ -66,7 +67,7 @@ def post_picture(
     response_2stage.update(
         group_id=group_id,
         access_token=access_token,
-        v='5.131'
+        v=version
     )
     response_3stage = requests.post(
         'https://api.vk.com/method/photos.saveWallPhoto',
@@ -85,7 +86,7 @@ def post_picture(
         'message': text,
         'attachments': attachments,
         'access_token': access_token,
-        'v': '5.131'
+        'v': version
     }
     response_4stage = requests.get(
         'https://api.vk.com/method/wall.post',
@@ -101,11 +102,13 @@ if __name__ == '__main__':
     access_token = env('access_token')
     group_id = env('GROUP_ID')
     user_id = env('USER_ID')
+    version = env('VERSION')
     picture, text = get_random_xkcd_picture()
     print(post_picture(
         picture=picture,
         group_id=group_id,
         user_id=user_id,
         access_token=access_token,
+        version=version,
         text=text
     ))
