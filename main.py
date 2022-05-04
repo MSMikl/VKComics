@@ -121,8 +121,8 @@ if __name__ == '__main__':
     picture, text = get_random_xkcd_picture()
     try:
         post_to_public(
-            picture_id = send_picture_to_public(
-                params = upload_picture(
+            picture_id=send_picture_to_public(
+                params=upload_picture(
                     upload_url=get_upload_server(
                         access_token=access_token,
                         group_id=group_id,
@@ -137,7 +137,7 @@ if __name__ == '__main__':
                 group_id=group_id,
                 version=version
             ),
-            text = text,
+            text=text,
             access_token=access_token,
             user_id=user_id,
             group_id=group_id,
