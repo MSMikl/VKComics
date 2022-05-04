@@ -2,6 +2,7 @@ import os
 
 from pathlib import Path
 from random import randint
+from urllib.error import HTTPError
 
 import requests
 
@@ -33,53 +34,68 @@ def get_random_xkcd_picture():
     ]
 
 
-def post_picture(
-        picture,
-        group_id,
-        user_id,
-        access_token,
-        version,
-        text=''
-    ):
-    params_for_get_server = {
+def get_upload_server(group_id, access_token, version):
+    params = {
         'group_id': group_id,
         'access_token': access_token,
         'v': version
     }
-    response_1stage = requests.get(
+    response = requests.get(
         'https://api.vk.com/method/photos.getWallUploadServer',
-        params=params_for_get_server
-    ).json()
-    if response_1stage.get('error', None):
-        return 'Ошибка получения сервера загрузки'
-    upload_url = response_1stage['response']['upload_url']
+        params=params
+    )
+    response.raise_for_status()
+    response = response.json()
+    if response.get('error', None):
+        raise HTTPError('Ошибка получения сервера загрузки')
+    return response['response']['upload_url']
+
+
+def upload_picture(upload_url, picture, group_id, access_token, version):
+    params = {
+        'group_id': group_id,
+        'access_token': access_token,
+        'v': version
+    }
     with open(picture, 'rb') as file:
         files = {
             'file1': file
         }
-        response_2stage = requests.post(
+        response = requests.post(
             upload_url,
-            params=params_for_get_server,
+            params=params,
             files=files
-        ).json()
-    if not response_2stage['photo']:
-        return 'Ошибка загрузки на сервер'
-    response_2stage.update(
+        )
+    response.raise_for_status()
+    response = response.json()
+    if not response['photo']:
+        raise HTTPError('Ошибка загрузки на сервер')
+    return response
+
+
+def send_picture_to_public(params, group_id, access_token, version):
+    params.update(
         group_id=group_id,
         access_token=access_token,
         v=version
     )
-    response_3stage = requests.post(
+    response = requests.post(
         'https://api.vk.com/method/photos.saveWallPhoto',
-        params=response_2stage
-    ).json()
-    if response_3stage.get('error', None):
-        return 'Ошибка передачи фотографии в сообщество'
+        params=params
+    )
+    response.raise_for_status()
+    response = response.json()
+    if response.get('error', None):
+        raise HTTPError('Ошибка передачи фотографии в сообщество')
+    return response['response'][0]['id']
+
+
+def post_to_public(picture_id, text, user_id, group_id, access_token, version):
     attachments = 'photo{}_{}'.format(
         user_id,
-        response_3stage['response'][0]['id']
+        picture_id
     )
-    params_for_post = {
+    params = {
         'owner_id': '-{}'.format(group_id),
         'from_group': '1',
         'friends_only': '1',
@@ -88,12 +104,11 @@ def post_picture(
         'access_token': access_token,
         'v': version
     }
-    response_4stage = requests.get(
+    response = requests.get(
         'https://api.vk.com/method/wall.post',
-        params=params_for_post
+        params=params
     )
-    os.remove(picture)
-    return "Комикс успешно опубликован"
+    response.raise_for_status()
 
 
 if __name__ == '__main__':
@@ -104,11 +119,27 @@ if __name__ == '__main__':
     user_id = env('USER_ID')
     version = env('VERSION')
     picture, text = get_random_xkcd_picture()
-    print(post_picture(
-        picture=picture,
-        group_id=group_id,
-        user_id=user_id,
+
+    post_to_public(
+        picture_id = send_picture_to_public(
+            params = upload_picture(
+                upload_url=get_upload_server(
+                    access_token=access_token,
+                    group_id=group_id,
+                    version=version
+                ),
+                picture=picture,
+                access_token=access_token,
+                group_id=group_id,
+                version=version
+            ),
+            access_token=access_token,
+            group_id=group_id,
+            version=version
+        ),
+        text = text,
         access_token=access_token,
-        version=version,
-        text=text
-    ))
+        user_id=user_id,
+        group_id=group_id,
+        version=version
+    )
