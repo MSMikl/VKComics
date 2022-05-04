@@ -143,7 +143,5 @@ if __name__ == '__main__':
             group_id=group_id,
             version=version
         )
-    except Exception:
-        raise
     finally:
         os.remove(picture)
