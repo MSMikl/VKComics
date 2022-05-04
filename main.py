@@ -15,7 +15,7 @@ def download_picture(url, path='./'):
         image.write(comics_picture.content)
 
 
-def get_xkcd_picture():
+def get_random_xkcd_picture():
     path = './Pictures/'
     Path(path).mkdir(parents=True, exist_ok=True)
     start_response = requests.get('https://xkcd.com/info.0.json')
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     access_token = env('access_token')
     group_id = env('GROUP_ID')
     user_id = env('USER_ID')
-    picture, text = get_xkcd_picture()
+    picture, text = get_random_xkcd_picture()
     print(post_picture(
         picture=picture,
         group_id=group_id,
