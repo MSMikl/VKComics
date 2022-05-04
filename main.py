@@ -119,28 +119,31 @@ if __name__ == '__main__':
     user_id = env('USER_ID')
     version = env('VERSION')
     picture, text = get_random_xkcd_picture()
-
-    post_to_public(
-        picture_id = send_picture_to_public(
-            params = upload_picture(
-                upload_url=get_upload_server(
+    try:
+        post_to_public(
+            picture_id = send_picture_to_public(
+                params = upload_picture(
+                    upload_url=get_upload_server(
+                        access_token=access_token,
+                        group_id=group_id,
+                        version=version
+                    ),
+                    picture=picture,
                     access_token=access_token,
                     group_id=group_id,
                     version=version
                 ),
-                picture=picture,
                 access_token=access_token,
                 group_id=group_id,
                 version=version
             ),
+            text = text,
             access_token=access_token,
+            user_id=user_id,
             group_id=group_id,
             version=version
-        ),
-        text = text,
-        access_token=access_token,
-        user_id=user_id,
-        group_id=group_id,
-        version=version
-    )
-    os.remove(picture)
+        )
+    except Exception:
+        raise
+    finally:
+        os.remove(picture)
