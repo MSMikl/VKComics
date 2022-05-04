@@ -18,7 +18,9 @@ def download_picture(url, path='./'):
 def get_xkcd_picture():
     path = './Pictures/'
     Path(path).mkdir(parents=True, exist_ok=True)
-    comics_number = randint(0, 2613)
+    start_response = requests.get('https://xkcd.com/info.0.json')
+    start_response.raise_for_status()
+    comics_number = randint(0, start_response.json()['num'])
     response = requests.get(
         'https://xkcd.com/{}/info.0.json'.format(comics_number)
     )
