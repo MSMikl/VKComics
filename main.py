@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from random import randint
 from urllib.error import HTTPError
+from urllib.parse import urlparse, unquote
 
 import requests
 
@@ -12,8 +13,11 @@ from environs import Env
 def download_picture(url, path='./'):
     comics_picture = requests.get(url)
     comics_picture.raise_for_status()
-    with open(Path(path, os.path.basename(url)), 'wb') as image:
+    parsed_url = urlparse(unquote(url))
+    filename = Path(parsed_url.path).name
+    with open(Path(path, filename), 'wb') as image:
         image.write(comics_picture.content)
+    return filename
 
 
 def get_random_xkcd_picture():
@@ -27,9 +31,9 @@ def get_random_xkcd_picture():
     )
     response.raise_for_status()
     comics_data = response.json()
-    download_picture(comics_data['img'], path)
+    filename = download_picture(comics_data['img'], path)
     return [
-        os.path.join(path, os.path.basename(comics_data['img'])),
+        os.path.join(path, filename),
         comics_data['alt']
     ]
 
