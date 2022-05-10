@@ -10,12 +10,9 @@ import requests
 from environs import Env
 
 
-class Upload_Error(Exception):
+class VK_Error(Exception):
     pass
 
-
-class Get_Server_Error(Exception):
-    pass
 
 
 def download_picture(url, path='./'):
@@ -62,29 +59,23 @@ def get_upload_server(group_id, access_token, version):
     response.raise_for_status()
     responsed_result = response.json()
     if responsed_result.get('error'):
-        raise Get_Server_Error(responsed_result['error']['error_msg'])
+        raise VK_Error(responsed_result['error']['error_msg'])
     return responsed_result['response']['upload_url']
 
 
-def upload_picture(upload_url, picture, group_id, access_token, version):
-    params = {
-        'group_id': group_id,
-        'access_token': access_token,
-        'v': version
-    }
+def upload_picture(upload_url, picture):
     with open(picture, 'rb') as file:
         files = {
             'file1': file
         }
         response = requests.post(
             upload_url,
-            params=params,
             files=files
         )
     response.raise_for_status()
     responsed_result = response.json()
     if not responsed_result['photo']:
-        raise Upload_Error('Ошибка загрузки на сервер')
+        raise VK_Error('Не удалось загрузить файл {}'.format(picture))
     return responsed_result
 
 
@@ -101,7 +92,7 @@ def send_picture_to_public(params, group_id, access_token, version):
     response.raise_for_status()
     responsed_result = response.json()
     if responsed_result.get('error'):
-        raise Upload_Error(responsed_result['error']['error_msg'])
+        raise VK_Error(responsed_result['error']['error_msg'])
     return responsed_result['response'][0]['id']
 
 
@@ -124,6 +115,9 @@ def post_to_public(picture_id, text, user_id, group_id, access_token, version):
         params=params
     )
     response.raise_for_status()
+    responsed_result = response.json()
+    if responsed_result.get('error'):
+        raise VK_Error(responsed_result['error']['error_msg'])
 
 
 if __name__ == '__main__':
@@ -144,10 +138,7 @@ if __name__ == '__main__':
     try:
         upload_response = upload_picture(
             upload_url=upload_url,
-            picture=picture,
-            access_token=access_token,
-            group_id=group_id,
-            version=version
+            picture=picture
         )
         uploaded_picture = send_picture_to_public(
             params=upload_response,
