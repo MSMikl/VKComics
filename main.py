@@ -10,6 +10,14 @@ import requests
 from environs import Env
 
 
+class Upload_Error(Exception):
+    pass
+
+
+class Get_Server_Error(Exception):
+    pass
+
+
 def download_picture(url, path='./'):
     comics_picture = requests.get(url)
     comics_picture.raise_for_status()
@@ -52,10 +60,10 @@ def get_upload_server(group_id, access_token, version):
         params=params
     )
     response.raise_for_status()
-    response = response.json()
-    if response.get('error', None):
-        raise HTTPError('Ошибка получения сервера загрузки')
-    return response['response']['upload_url']
+    responsed_result = response.json()
+    if responsed_result.get('error'):
+        raise Get_Server_Error(responsed_result['error']['error_msg'])
+    return responsed_result['response']['upload_url']
 
 
 def upload_picture(upload_url, picture, group_id, access_token, version):
@@ -74,10 +82,10 @@ def upload_picture(upload_url, picture, group_id, access_token, version):
             files=files
         )
     response.raise_for_status()
-    response = response.json()
-    if not response['photo']:
-        raise HTTPError('Ошибка загрузки на сервер')
-    return response
+    responsed_result = response.json()
+    if not responsed_result['photo']:
+        raise Upload_Error('Ошибка загрузки на сервер')
+    return responsed_result
 
 
 def send_picture_to_public(params, group_id, access_token, version):
@@ -91,10 +99,10 @@ def send_picture_to_public(params, group_id, access_token, version):
         params=params
     )
     response.raise_for_status()
-    response = response.json()
-    if response.get('error', None):
-        raise HTTPError('Ошибка передачи фотографии в сообщество')
-    return response['response'][0]['id']
+    responsed_result = response.json()
+    if responsed_result.get('error'):
+        raise Upload_Error(responsed_result['error']['error_msg'])
+    return responsed_result['response'][0]['id']
 
 
 def post_to_public(picture_id, text, user_id, group_id, access_token, version):
@@ -125,15 +133,15 @@ if __name__ == '__main__':
     group_id = env('GROUP_ID')
     user_id = env('USER_ID')
     version = env('VERSION')
+    upload_url = get_upload_server(
+        access_token=access_token,
+        group_id=group_id,
+        version=version
+    )
     picture, text = get_xkcd_picture(
         get_random_comics_number()
     )
     try:
-        upload_url = get_upload_server(
-            access_token=access_token,
-            group_id=group_id,
-            version=version
-        )
         upload_response = upload_picture(
             upload_url=upload_url,
             picture=picture,
