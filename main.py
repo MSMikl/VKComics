@@ -14,6 +14,11 @@ class VK_Error(Exception):
     pass
 
 
+def check_vkresponse_status(response):
+    responsed_result = response.json()
+    if responsed_result.get('error'):
+        raise VK_Error(responsed_result['error']['error_msg'])
+
 
 def download_picture(url, path='./'):
     comics_picture = requests.get(url)
@@ -26,9 +31,9 @@ def download_picture(url, path='./'):
 
 
 def get_random_comics_number():
-    start_response = requests.get('https://xkcd.com/info.0.json')
-    start_response.raise_for_status()
-    return randint(0, start_response.json()['num'])
+    response = requests.get('https://xkcd.com/info.0.json')
+    response.raise_for_status()
+    return randint(0, response.json()['num'])
 
 
 def get_xkcd_picture(number):
@@ -57,10 +62,8 @@ def get_upload_server(group_id, access_token, version):
         params=params
     )
     response.raise_for_status()
-    responsed_result = response.json()
-    if responsed_result.get('error'):
-        raise VK_Error(responsed_result['error']['error_msg'])
-    return responsed_result['response']['upload_url']
+    check_vkresponse_status(response)
+    return response.json()['response']['upload_url']
 
 
 def upload_picture(upload_url, picture):
@@ -90,10 +93,8 @@ def send_picture_to_public(params, group_id, access_token, version):
         params=params
     )
     response.raise_for_status()
-    responsed_result = response.json()
-    if responsed_result.get('error'):
-        raise VK_Error(responsed_result['error']['error_msg'])
-    return responsed_result['response'][0]['id']
+    check_vkresponse_status(response)
+    return response.json()['response'][0]['id']
 
 
 def post_to_public(picture_id, text, user_id, group_id, access_token, version):
@@ -115,9 +116,7 @@ def post_to_public(picture_id, text, user_id, group_id, access_token, version):
         params=params
     )
     response.raise_for_status()
-    responsed_result = response.json()
-    if responsed_result.get('error'):
-        raise VK_Error(responsed_result['error']['error_msg'])
+    check_vkresponse_status(response)
 
 
 if __name__ == '__main__':
