@@ -20,14 +20,17 @@ def download_picture(url, path='./'):
     return filename
 
 
-def get_random_xkcd_picture():
-    path = './Pictures/'
-    Path(path).mkdir(parents=True, exist_ok=True)
+def get_random_comics_number():
     start_response = requests.get('https://xkcd.com/info.0.json')
     start_response.raise_for_status()
-    comics_number = randint(0, start_response.json()['num'])
+    return randint(0, start_response.json()['num'])
+
+
+def get_xkcd_picture(number):
+    path = './Pictures/'
+    Path(path).mkdir(parents=True, exist_ok=True)
     response = requests.get(
-        'https://xkcd.com/{}/info.0.json'.format(comics_number)
+        'https://xkcd.com/{}/info.0.json'.format(number)
     )
     response.raise_for_status()
     comics_data = response.json()
@@ -122,25 +125,30 @@ if __name__ == '__main__':
     group_id = env('GROUP_ID')
     user_id = env('USER_ID')
     version = env('VERSION')
-    picture, text = get_random_xkcd_picture()
+    picture, text = get_xkcd_picture(
+        get_random_comics_number()
+    )
     try:
+        upload_url = get_upload_server(
+            access_token=access_token,
+            group_id=group_id,
+            version=version
+        )
+        upload_response = upload_picture(
+            upload_url=upload_url,
+            picture=picture,
+            access_token=access_token,
+            group_id=group_id,
+            version=version
+        )
+        uploaded_picture = send_picture_to_public(
+            params=upload_response,
+            access_token=access_token,
+            group_id=group_id,
+            version=version
+        )
         post_to_public(
-            picture_id=send_picture_to_public(
-                params=upload_picture(
-                    upload_url=get_upload_server(
-                        access_token=access_token,
-                        group_id=group_id,
-                        version=version
-                    ),
-                    picture=picture,
-                    access_token=access_token,
-                    group_id=group_id,
-                    version=version
-                ),
-                access_token=access_token,
-                group_id=group_id,
-                version=version
-            ),
+            picture_id=uploaded_picture,
             text=text,
             access_token=access_token,
             user_id=user_id,
