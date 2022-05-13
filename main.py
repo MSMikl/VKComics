@@ -2,7 +2,6 @@ import os
 
 from pathlib import Path
 from random import randint
-from urllib.error import HTTPError
 from urllib.parse import urlparse, unquote
 
 import requests
@@ -14,10 +13,9 @@ class VK_Error(Exception):
     pass
 
 
-def check_vkresponse_status(response):
-    responsed_result = response.json()
-    if responsed_result.get('error'):
-        raise VK_Error(responsed_result['error']['error_msg'])
+def check_vkresponse_status(responsed_data):
+    if responsed_data.get('error'):
+        raise VK_Error(responsed_data['error']['error_msg'])
 
 
 def download_picture(url, path='./'):
@@ -62,8 +60,9 @@ def get_upload_server(group_id, access_token, version):
         params=params
     )
     response.raise_for_status()
-    check_vkresponse_status(response)
-    return response.json()['response']['upload_url']
+    responsed_data = response.json()
+    check_vkresponse_status(responsed_data)
+    return responsed_data['response']['upload_url']
 
 
 def upload_picture(upload_url, picture):
@@ -93,8 +92,9 @@ def send_picture_to_public(params, group_id, access_token, version):
         params=params
     )
     response.raise_for_status()
-    check_vkresponse_status(response)
-    return response.json()['response'][0]['id']
+    responsed_data = response.json()
+    check_vkresponse_status(responsed_data)
+    return responsed_data['response'][0]['id']
 
 
 def post_to_public(picture_id, text, user_id, group_id, access_token, version):
